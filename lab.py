@@ -87,8 +87,32 @@ def satisfying_assignment(formula):
 
 
 
-cnf = [[('a', True), ('b', True)], [('a', False), ('b', False), ('c', True)], [('b', True), ('c', True)], [('b', True), ('c', False)]]
-print(satisfying_assignment(cnf))
+    
+def make_groups(iter, nums):
+    res = []
+    def helper(x):
+        if not x:
+            return {()}
+        else:
+            first = x[0]
+            rest = x[1:]
+            rest_seq = helper(rest)
+            first_seq = set()
+            for subseq in rest_seq:
+                if(len((first,) + subseq) <= nums):
+                    tmp = (first,) + subseq
+                    if(len(tmp) == nums):
+                        res.append(tmp)
+                    first_seq.add(((first,) + subseq))
+            return first_seq | rest_seq
+    helper(iter)
+    return res
+
+
+
+
+
+
 
 
 def boolify_scheduling_problem(student_preferences, room_capacities):
@@ -107,10 +131,67 @@ def boolify_scheduling_problem(student_preferences, room_capacities):
     We assume no student or room names contain underscores. This function
     should not mutate its inputs.
     """
-    raise NotImplementedError
+    def students_in_desired_room(student, room):
+        res = []
+        for s in student:
+            pref = student[s]
+            tmp = []
+            for rooms in pref:
+                to_str = f"{s}_{rooms}"
+                tmp.append((to_str, True))
+            res.append(tmp)
+        return res
+    
+    def students_in_room(student, room):
+        rooms = list(room.keys())
+        pairs = make_groups(rooms, 2)
+        res = []
+        students = student_preferences.keys()
+        for student in students:
+            for pair in pairs:
+                tmp = []
+                for room in pair:
+                    to_str = f"{student}_{room}"
+                    tmp.append((to_str, False))
+                res.append(tmp)
+        return res
+
+    def room_constraints(student, room):
+        student = list(student_preferences.keys())
+        res = []
+        for key, value in room.items():
+            group = make_groups(student, value + 1)
+            for g in group:
+                tmp = []
+                for item in g:
+                    to_str = f"{item}_{key}"
+                    tmp.append((to_str, False))
+                res.append(tmp)
+        return res
+
+
+    
+    first = students_in_desired_room(student_preferences, room_capacities)
+    second = students_in_room(student_preferences, room_capacities)
+    third = room_constraints(student_preferences, room_capacities)
+    r = first + second + third
+    return r
+
+
+
+
+
 
 
 if __name__ == "__main__":
     #_doctest_flags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
     #doctest.testmod(optionflags=_doctest_flags)
-    pass
+    student_preference = {"Alex": {'basement', 'penthouse'},
+                          "Blake": {"kitchen"},
+                          "Chris": {"basement", "kitchen"},
+                          "Dana" : {"kitchen" , "penthouse", "basement"}}
+    room = {"basement": 1,
+            "kitchen" : 2,
+            "penthouse": 4}
+    print(boolify_scheduling_problem(student_preference, room))
+    
