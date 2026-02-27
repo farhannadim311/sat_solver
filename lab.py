@@ -6,7 +6,7 @@ SAT Solver
 #!/usr/bin/env python3
 
 # import typing  # optional import
-# import pprint  # optional import
+import pprint  # optional import
 import doctest
 import sys
 
@@ -30,36 +30,58 @@ def update_formula(formula, assignment):
             res.append(tmp)
     return res
 
-original_formula = [
-    [('a', True), ('b', True), ('c', True)],
-    [('a', False), ('f', True)],
-    [('a', False), ('f', False)],
-    [('d', False), ('e', True), ('a', True), ('g', True)],
-    [('h', False), ('c', True), ('a', False)]
-]
-res = update_formula(original_formula, ('a', True))
-res = update_formula(res, ('f', True))
-print(res)
-
-
-
-
+def has_single_clause(formula):
+    for clause in formula:
+        if(len(clause) == 1):
+            return True
 
 def satisfying_assignment(formula):
     """
     Find a satisfying assignment for a given CNF formula.
     Returns that assignment if one exists, or None otherwise. Does not
     mutate input formula.
+    """""
 
-    >>> satisfying_assignment([])
-    {}
-    >>> T, F = True, False
-    >>> x = satisfying_assignment([[('a', T), ('b', F), ('c', T)]])
-    >>> x.get('a', None) is T or x.get('b', None) is F or x.get('c', None) is T
-    True
-    >>> satisfying_assignment([[('a', T)], [('a', F)]])
-    """
-    raise NotImplementedError
+    res ={}
+    def helper(x, visited):
+        if x == [[]]:
+            return None
+        if(x == []):
+            return res
+        else:
+            single = has_single_clause(x)
+            for clause in x:
+                if(single):
+                    if(len(clause) != 1):
+                        continue
+                for literal in clause:
+                    if(literal in visited):
+                        continue                   
+                    if(literal[0] in res):
+                        if(res[literal[0]] != literal[1]):
+                            continue
+                    f = update_formula(x, literal)
+                    res[literal[0]] = literal[1]
+                    recur = helper(f, visited)
+                    if(recur == None and single):
+                        del res[literal[0]]
+                        return None
+                    if(recur != None):
+                        return res
+                    else:
+                        visited.add(literal)
+                        del res[literal[0]]
+    return helper(formula, set())
+cnf = [
+            [("a", True), ("b", True)],
+            [("a", False), ("b", False), ("c", True)],
+            [("b", True), ("c", True)],
+            [("b", True), ("c", False)],
+            [("d", True), ("d", False)],  # "d" can be assigned either value
+            [("d", True), ("d", False), ("e", False)]
+            # "e" can be assigned a value, but doesn't need one to satisfy the clause
+        ]
+print(satisfying_assignment(cnf))
 
 
 def boolify_scheduling_problem(student_preferences, room_capacities):
