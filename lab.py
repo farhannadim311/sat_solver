@@ -16,12 +16,12 @@ sys.setrecursionlimit(10_000)
 def update_formula(formula, assignment):
     #clause is [(c, True), [d. False]]
     res = []
-    for idx, clause in enumerate(formula):
+    for  clause in formula:
         if assignment in clause:
             continue
         else:
             tmp = []
-            for j, literal in enumerate(clause):
+            for literal in clause:
                 if(literal[0] == assignment[0]):
                     if(literal[1] ^ assignment[1] ==True):
                         continue
@@ -30,10 +30,17 @@ def update_formula(formula, assignment):
             res.append(tmp)
     return res
 
+
 def has_single_clause(formula):
     for clause in formula:
         if(len(clause) == 1):
             return True
+        
+
+def get_single_clause(formula):
+    for clause in formula:
+        if(len(clause) == 1):
+            yield clause
 
 def satisfying_assignment(formula):
     """
@@ -43,44 +50,44 @@ def satisfying_assignment(formula):
     """""
 
     res ={}
-    def helper(x, visited):
+    def helper(x):
         if x == [[]]:
             return None
         if(x == []):
             return res
         else:
-            single = has_single_clause(x)
-            for clause in x:
-                if(single):
-                    if(len(clause) != 1):
-                        continue
+            for clause in get_single_clause(x):
                 for literal in clause:
-                    if(literal in visited):
-                        continue                   
                     if(literal[0] in res):
-                        if(res[literal[0]] != literal[1]):
-                            continue
+                        continue
                     f = update_formula(x, literal)
                     res[literal[0]] = literal[1]
-                    recur = helper(f, visited)
-                    if(recur == None and single):
+                    recur = helper(f)
+                    if(recur == None):
                         del res[literal[0]]
                         return None
                     if(recur != None):
                         return res
-                    else:
-                        visited.add(literal)
-                        del res[literal[0]]
-    return helper(formula, set())
-cnf = [
-            [("a", True), ("b", True)],
-            [("a", False), ("b", False), ("c", True)],
-            [("b", True), ("c", True)],
-            [("b", True), ("c", False)],
-            [("d", True), ("d", False)],  # "d" can be assigned either value
-            [("d", True), ("d", False), ("e", False)]
-            # "e" can be assigned a value, but doesn't need one to satisfy the clause
-        ]
+            
+            clause = x[0]
+            for literal in clause:
+                if(literal[0] in res):
+                    continue
+                f = update_formula(x, literal)
+                if([] in f):
+                    return None
+                res[literal[0]] = literal[1]
+                recur = helper(f)
+                if(recur != None):
+                    return res
+                else:
+                    del res[literal[0]]
+    return helper(formula)
+
+
+
+
+cnf = [[('a', True), ('b', True)], [('a', False), ('b', False), ('c', True)], [('b', True), ('c', True)], [('b', True), ('c', False)]]
 print(satisfying_assignment(cnf))
 
 
